@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 
 const botToken = "6745415452:AAGs8KwORu58JYMqyEjrE-ERQFSpOwyADx4";
 
-const uri = 'mongodb+srv://prakhardoneria:Yash2021@tgdb.tjafx2x.mongodb.net/?retryWrites=true&w=majority';
+const uri = 'mongodb+srv://prakhardoneria:MyPassword@tgdb.tjafx2x.mongodb.net/?retryWrites=true&w=majority';
 
 const client = new MongoClient(uri);
 
