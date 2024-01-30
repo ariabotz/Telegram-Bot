@@ -1,7 +1,8 @@
 const { Telegraf } = require('telegraf');
 const { MongoClient } = require('mongodb');
 
-const botToken = process.env.TELEGRAM_BOT_KEY;
+const botToken = "6745415452:AAGs8KwORu58JYMqyEjrE-ERQFSpOwyADx4";
+
 const uri = 'mongodb+srv://prakhardoneria:Yash2021@tgdb.tjafx2x.mongodb.net/?retryWrites=true&w=majority';
 
 const client = new MongoClient(uri);
