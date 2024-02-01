@@ -1,9 +1,8 @@
 const { Telegraf } = require('telegraf');
 const { MongoClient } = require('mongodb');
 
-const botToken = "6745415452:AAGs8KwORu58JYMqyEjrE-ERQFSpOwyADx4";
-
-const uri = 'mongodb+srv://prakhardoneria:MyPassword@tgdb.tjafx2x.mongodb.net/?retryWrites=true&w=majority';
+const botToken = process.env.TELEGRAM_BOT_KEY;
+const uri = 'mongodb+srv://prakhardoneria:Yash2021@tgdb.tjafx2x.mongodb.net/?retryWrites=true&w=majority';
 
 const client = new MongoClient(uri);
 
@@ -139,6 +138,114 @@ bot.command('unwarn', async (ctx) => {
   } catch (error) {
     console.error('Error processing unwarn command:', error);
     ctx.reply('Error processing the unwarn. Please try again later.');
+  } finally {
+    await client.close();
+  }
+});
+
+bot.command('clearDB', async (ctx) => {
+  try {
+    const senderUsername = ctx.from.username;
+
+    if (senderUsername === "PrakharDoneria") {
+      await client.connect();
+      console.log('Connected to MongoDB');
+
+      const database = client.db('TgDB');
+      const bansCollection = database.collection('bans');
+      const warnsCollection = database.collection('warns');
+
+      await bansCollection.deleteMany({});
+      await warnsCollection.deleteMany({});
+
+      ctx.reply('All data in bans and warns collections has been cleared.');
+    } else {
+      ctx.reply('You do not have permission to clear the database.');
+    }
+  } catch (error) {
+    console.error('Error processing clearDB command:', error);
+    ctx.reply('Error processing the clearDB. Please try again later.');
+  } finally {
+    await client.close();
+  }
+});
+
+// ... (previous code)
+
+async function getTotalSpaceConsumed(database) {
+  const stats = await database.command({ dbStats: 1, scale: 1024 });
+  return `${(stats.dataSize / 1024).toFixed(2)} KB`;
+}
+
+bot.command('showDB', async (ctx) => {
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB');
+
+    const database = client.db('TgDB');
+    const bansCollection = database.collection('bans');
+    const warnsCollection = database.collection('warns');
+
+    const bansData = await bansCollection.find().toArray();
+    const warnsData = await warnsCollection.find().toArray();
+
+    if (bansData.length === 0 && warnsData.length === 0) {
+      ctx.reply('No data found in bans and warns collections.');
+      return;
+    }
+
+    const response = {
+      bans: bansData,
+      warns: warnsData,
+      totalSpace: await getTotalSpaceConsumed(database),
+    };
+
+    const formattedResponse = JSON.stringify(response, null, 2);
+    ctx.replyWithMarkdownV2(`\`\`\`json\n${formattedResponse}\n\`\`\``);
+  } catch (error) {
+    console.error('Error processing showDB command:', error);
+    ctx.reply('Error processing the showDB. Please try again later.');
+  } finally {
+    await client.close();
+  }
+});
+
+// ... (remaining code)
+
+bot.command('warn', async (ctx) => {
+  try {
+    const userIdToWarn = ctx.message.reply_to_message.from.id;
+    const senderUsername = ctx.from.username;
+
+    if (senderUsername === "PrakharDoneria") {
+      await client.connect();
+      console.log('Connected to MongoDB');
+
+      const database = client.db('TgDB');
+      const warnsCollection = database.collection('warns');
+      const bansCollection = database.collection('bans');
+
+      const currentWarns = await warnsCollection.findOne({ userId: userIdToWarn }) || { count: 0 };
+
+      if (currentWarns.count < 3) {
+        await warnsCollection.updateOne(
+          { userId: userIdToWarn },
+          { $inc: { count: 1 } },
+          { upsert: true }
+        );
+
+        ctx.reply(`User warned! Total warns: ${currentWarns.count + 1}`);
+      } else {
+        // Max warns reached, trigger ban
+        await bansCollection.insertOne({ userId: userIdToWarn });
+        ctx.reply(`User has reached the maximum number of warns (${currentWarns.count}). User banned!`);
+      }
+    } else {
+      ctx.reply('You do not have permission to warn users.');
+    }
+  } catch (error) {
+    console.error('Error processing warn command:', error);
+    ctx.reply('Error processing the warn. Please try again later.');
   } finally {
     await client.close();
   }
