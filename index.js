@@ -320,8 +320,11 @@ async function isUserBanned(userId) {
   }
 }
 
-bot.launch().then(() => {
-  console.log('Bot is running!');
-}).catch((error) => {
-  console.error('Error starting the bot:', error.message);
-});
+(async () => {
+  try {
+    await bot.launch();
+    console.log('Bot is running!');
+  } catch (error) {
+    console.error('Error starting the bot:', error.message);
+  }
+})();
